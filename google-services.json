@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "293416345590",
+    "project_id": "nikconnects-74cc5",
+    "storage_bucket": "nikconnects-74cc5.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:293416345590:android:bd841861f7264ea6c631d7",
+        "android_client_info": {
+          "package_name": "com.nikconnects"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDDgvvRhu83MfHME74t7ItqfnRlUxAwmuI"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
