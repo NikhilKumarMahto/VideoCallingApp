@@ -57,8 +57,6 @@ const Home: React.FC = () => {
         fetchData();
     }, []);
 
-    console.log("data===>", users);
-
     return (
         <SafeAreaView style={styles.container}>
             <FlatList<CardData>

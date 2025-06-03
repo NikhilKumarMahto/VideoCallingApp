@@ -11,9 +11,12 @@
   },
   "dependencies": {
     "@react-native-firebase/app": "^22.2.0",
+    "@react-native-firebase/database": "^22.2.0",
     "@react-native-firebase/firestore": "^22.2.0",
     "react": "19.0.0",
     "react-native": "0.79.2",
+    "react-native-get-random-values": "^1.11.0",
+    "react-native-incall-manager": "^4.2.1",
     "react-native-rename": "^3.2.16",
     "react-native-vector-icons": "^10.2.0",
     "react-native-webrtc": "^124.0.5"

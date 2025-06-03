@@ -12,14 +12,14 @@ function App(): React.JSX.Element {
   // const safePadding = '5%';
 
   const firebaseConfig = {
-    apiKey: "AIzaSyDDgvvRhu83MfHME74t7ItqfnRlUxAwmuI",
-    authDomain: "nikconnects-74cc5.firebaseapp.com",
-    projectId: "nikconnects-74cc5",
-    storageBucket: "nikconnects-74cc5.firebasestorage.app",
-    messagingSenderId: "",
-    appId: "1:293416345590:android:bd841861f7264ea6c631d7",
-    measurementId: "",
-    databaseURL: "https://nikconnects-74cc5.firebaseio.com"
+    apiKey: 'AIzaSyDDgvvRhu83MfHME74t7ItqfnRlUxAwmuI',
+    authDomain: 'nikconnects-74cc5.firebaseapp.com',
+    projectId: 'nikconnects-74cc5',
+    storageBucket: 'nikconnects-74cc5.firebasestorage.app',
+    messagingSenderId: '293416345590',
+    appId: '1:293416345590:android:bd841861f7264ea6c631d7',
+    measurementId: 'G-491092997',
+    databaseURL: 'https://nikconnects-74cc5.firebaseio.com'
   };
 
   if (!firebase.apps.length) {
