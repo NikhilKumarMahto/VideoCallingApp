@@ -1,141 +1,75 @@
+import { getApp } from '@react-native-firebase/app';
+import { getDatabase } from '@react-native-firebase/database';
 import {
-    RTCPeerConnection,
-    RTCIceCandidate,
-    RTCSessionDescription,
-    mediaDevices,
+  RTCPeerConnection,
+  mediaDevices,
+  RTCSessionDescription,
+  RTCIceCandidate,
 } from 'react-native-webrtc';
-import database from '@react-native-firebase/database';
+
+const configuration = {iceServers: [{urls: 'stun:stun.l.google.com:19302'}]};
 
 export class WebRTCService {
-    private peerConnection: RTCPeerConnection | null = null;
-    private localStream: any = null;
-    private remoteStream: any = null;
-    private roomId: string | null = null;
+  peer: RTCPeerConnection | null = null;
+  localStream: any = null;
+  remoteStream: any = null;
+  db = getDatabase(getApp());
 
-    constructor() {
-        this.peerConnection = new RTCPeerConnection({
-            iceServers: [
-                {
-                    urls: [
-                        'stun:stun1.l.google.com:19302',
-                        'stun:stun2.l.google.com:19302',
-                    ],
-                },
-            ],
-        });
+  async init(isVideo: boolean = false) {
+    this.peer = new RTCPeerConnection(configuration);
+    this.localStream = await mediaDevices.getUserMedia({
+      audio: true,
+      video: isVideo,
+    });
+    this.peer.addStream(this.localStream);
+
+    this.remoteStream = null;
+    this.peer.onaddstream = event => {
+      this.remoteStream = event.stream;
+    };
+    return this.localStream;
+  }
+
+  async createOffer() {
+    if (!this.peer) throw new Error('PeerConnection not initialized');
+    const offer = await this.peer.createOffer();
+    await this.peer.setLocalDescription(offer);
+    return offer;
+  }
+
+  async createAnswer() {
+    if (!this.peer) throw new Error('PeerConnection not initialized');
+    const answer = await this.peer.createAnswer();
+    await this.peer.setLocalDescription(answer);
+    return answer;
+  }
+
+  async setRemoteDescription(desc: RTCSessionDescription) {
+    if (!this.peer) throw new Error('PeerConnection not initialized');
+    await this.peer.setRemoteDescription(new RTCSessionDescription(desc));
+  }
+
+  async addIceCandidate(candidate: RTCIceCandidate) {
+    if (!this.peer) throw new Error('PeerConnection not initialized');
+    await this.peer.addIceCandidate(new RTCIceCandidate(candidate));
+  }
+
+  onIceCandidate(callback: (candidate: RTCIceCandidate) => void) {
+    if (!this.peer) throw new Error('PeerConnection not initialized');
+    this.peer.onicecandidate = event => {
+      if (event.candidate) callback(event.candidate);
+    };
+  }
+
+  close() {
+    if (this.peer) {
+      this.peer.close();
+      this.peer = null;
     }
-
-    public async startCall(roomId: string): Promise<void> {
-        try {
-            this.roomId = roomId;
-            await this.setupLocalStream();
-            await this.createOffer();
-            this.setupListeners();
-        } catch (error) {
-            console.error('Error starting call:', error);
-            throw error;
-        }
+    if (this.localStream) {
+      this.localStream.release();
+      this.localStream = null;
     }
-
-    public async joinCall(roomId: string): Promise<void> {
-        try {
-            this.roomId = roomId;
-            await this.setupLocalStream();
-            await this.setupRemoteDescription();
-            await this.createAnswer();
-            this.setupListeners();
-        } catch (error) {
-            console.error('Error joining call:', error);
-            throw error;
-        }
-    }
-
-    private async setupLocalStream(): Promise<void> {
-        const stream = await mediaDevices.getUserMedia({
-            audio: true,
-            video: false, // Initially false for audio-only calls
-        });
-        this.localStream = stream;
-        stream.getTracks().forEach((track) => {
-            this.peerConnection?.addTrack(track, stream);
-        });
-    }
-
-    private async createOffer(): Promise<void> {
-        try {
-            const offer = await this.peerConnection?.createOffer();
-            await this.peerConnection?.setLocalDescription(offer);
-
-            // Save the offer to Firebase
-            await database()
-                .ref(`rooms/${this.roomId}/offer`)
-                .set(JSON.stringify(offer));
-        } catch (error) {
-            console.error('Error creating offer:', error);
-            throw error;
-        }
-    }
-
-    private async createAnswer(): Promise<void> {
-        try {
-            const answer = await this.peerConnection?.createAnswer();
-            await this.peerConnection?.setLocalDescription(answer);
-
-            // Save the answer to Firebase
-            await database()
-                .ref(`rooms/${this.roomId}/answer`)
-                .set(JSON.stringify(answer));
-        } catch (error) {
-            console.error('Error creating answer:', error);
-            throw error;
-        }
-    }
-
-    private setupListeners(): void {
-        // Handle ICE candidates
-        this.peerConnection!.onicecandidate = ({ candidate }) => {
-            if (candidate) {
-                database()
-                    .ref(`rooms/${this.roomId}/candidates`)
-                    .push(JSON.stringify(candidate));
-            }
-        };
-
-        // Handle remote stream
-        this.peerConnection!.ontrack = (event) => {
-            this.remoteStream = event.streams[0];
-        };
-
-        // Listen for remote candidates
-        database()
-            .ref(`rooms/${this.roomId}/candidates`)
-            .on('child_added', (snapshot) => {
-                const candidate = JSON.parse(snapshot.val());
-                this.peerConnection?.addIceCandidate(new RTCIceCandidate(candidate));
-            });
-    }
-
-    private async setupRemoteDescription(): Promise<void> {
-        const offerSnapshot = await database()
-            .ref(`rooms/${this.roomId}/offer`)
-            .once('value');
-        const offer = JSON.parse(offerSnapshot.val());
-        await this.peerConnection?.setRemoteDescription(
-            new RTCSessionDescription(offer)
-        );
-    }
-
-    public endCall(): void {
-        this.localStream?.getTracks().forEach((track: any) => track.stop());
-        this.peerConnection?.close();
-        if (this.roomId) {
-            database().ref(`rooms/${this.roomId}`).remove();
-        }
-    }
-
-    public toggleAudio(enabled: boolean): void {
-        this.localStream?.getAudioTracks().forEach((track: any) => {
-            track.enabled = enabled;
-        });
-    }
+    this.remoteStream = null;
+  }
 }

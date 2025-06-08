@@ -1,33 +1,46 @@
-import React from 'react';
-import Home from './src/screens/Home.tsx';
-import firebase from "@react-native-firebase/app";
+import React, { useEffect, useState } from 'react';
+import { NavigationContainer } from '@react-navigation/native';
+import { createNativeStackNavigator } from '@react-navigation/native-stack';
+import Login from './src/screens/Login';
+import Home from './src/screens/Home';
+import { getAuth, onAuthStateChanged } from '@react-native-firebase/auth';
+import { ActivityIndicator, View } from 'react-native';
+import CallScreen from './src/screens/CallScreen';
 
-function App(): React.JSX.Element {
-  // const isDarkMode = useColorScheme() === 'dark';
-  //
-  // const backgroundStyle = {
-  //   backgroundColor: isDarkMode ? Colors.darker : Colors.lighter,
-  // };
-  //
-  // const safePadding = '5%';
+const Stack = createNativeStackNavigator();
 
-  const firebaseConfig = {
-    apiKey: 'AIzaSyDDgvvRhu83MfHME74t7ItqfnRlUxAwmuI',
-    authDomain: 'nikconnects-74cc5.firebaseapp.com',
-    projectId: 'nikconnects-74cc5',
-    storageBucket: 'nikconnects-74cc5.firebasestorage.app',
-    messagingSenderId: '293416345590',
-    appId: '1:293416345590:android:bd841861f7264ea6c631d7',
-    measurementId: 'G-491092997',
-    databaseURL: 'https://nikconnects-74cc5.firebaseio.com'
-  };
+const App = () => {
+  const [initializing, setInitializing] = useState(true);
+  const [currentUser, setCurrentUser] = useState<any>(null);
 
-  if (!firebase.apps.length) {
-    firebase.initializeApp(firebaseConfig)
+  useEffect(() => {
+    const auth = getAuth();
+    const unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
+      setCurrentUser(firebaseUser);
+      if (initializing) {
+        setInitializing(false);
+      }
+    });
+    return unsubscribe;
+  }, [initializing]);
+
+  if (initializing) {
+    return (
+      React.createElement(View, { style: { flex: 1, justifyContent: 'center', alignItems: 'center' } },
+        React.createElement(ActivityIndicator, { size: 'large', color: '#007AFF' })
+      )
+    );
   }
 
   return (
-   <Home />
+    <NavigationContainer>
+      <Stack.Navigator initialRouteName={currentUser ? 'Home' : 'Login'}>
+        <Stack.Screen name="Login" component={Login} options={{ headerShown: false }} />
+        <Stack.Screen name="Home" component={Home} options={{ headerShown: false }} />
+        <Stack.Screen name="Call" component={CallScreen} options={{ headerShown: false }} />
+      </Stack.Navigator>
+    </NavigationContainer>
   );
-}
+};
+
 export default App;

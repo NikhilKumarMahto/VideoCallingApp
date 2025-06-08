@@ -1,21 +1,51 @@
 import React from 'react';
 import {StyleSheet, Text, TouchableOpacity, View} from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
+import { getFirestore, collection, doc, setDoc } from '@react-native-firebase/firestore';
 
 interface CardItemProps {
     name: string;
+    id: string;
+    navigation: any;
+    currentUserId: string;
 }
 
-const CardItem: React.FC<CardItemProps> = ({ name }) => {
-    const handleAudioCall = () => {
-        console.log(`Audio call with ${name}`);
+const CardItem: React.FC<CardItemProps> = ({ name, id, navigation, currentUserId }) => {
+    const handleAudioCall = async () => {
+        if (id === currentUserId) {
+            // Prevent calling yourself
+            return;
+        }
+
+        // Generate a unique callId
+        const callId = `${currentUserId}_${id}_${Date.now()}`;
+        // Use modular Firestore API
+        const db = getFirestore();
+        const callDocRef = doc(collection(db, 'calls'), callId);
+        try {
+            await setDoc(callDocRef, {
+                callerId: currentUserId,
+                calleeId: id,
+                status: 'calling',
+                createdAt: new Date().toISOString(),
+            });
+            console.log('Call document created:', callId);
+            // Navigate to CallScreen as caller
+            navigation.navigate('Call', { callId, isCaller: true });
+        } catch (error) {
+            console.error('Error creating call document:', error);
+            // Optionally show an alert to the user
+        }
+        console.log("check1===");
     };
 
     const handleVideoCall = () => {
+        // Placeholder for video call
         console.log(`Video call with ${name}`);
     };
 
     const handleChat = () => {
+        // Placeholder for chat
         console.log(`Chat with ${name}`);
     };
 
